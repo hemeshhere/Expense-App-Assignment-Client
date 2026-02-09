@@ -1,47 +1,152 @@
 import { useParams, Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import axios from "axios";
+import { serverEndpoint } from "../config/appConfig";
 
 function GroupExpenses() {
-    // 1. Get the groupId from the URL
     const { groupId } = useParams();
 
+    const [group, setGroup] = useState(null);
+    const [expenses, setExpenses] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    const [title, setTitle] = useState("");
+    const [amount, setAmount] = useState("");
+
+    useEffect(() => {
+        fetchGroupDetails();
+        fetchExpenses();
+    }, []);
+
+    const fetchGroupDetails = async () => {
+        const res = await axios.get(
+            `${serverEndpoint}/groups/my-groups` ,
+            { withCredentials: true }
+        );
+        setGroup(res.data.find(g=>g._id === groupId));
+        setLoading(false);
+    };
+
+    const fetchExpenses = async () => {
+        const res = await axios.get(
+            `${serverEndpoint}/expenses/${groupId}`,
+            { withCredentials: true }
+        );
+        setExpenses(res.data);
+    };
+
+    const handleAddExpense = async (e) => {
+        e.preventDefault();
+
+        const splitAmount = amount / group.membersEmail.length;
+
+        const splits = group.membersEmail.map(email => ({
+            email,
+            amount: splitAmount
+        }));
+
+        await axios.post(
+            `${serverEndpoint}/expenses/${groupId}/create`,
+            {
+                title,
+                amount: Number(amount),
+                paidByEmail: group.membersEmail[0],
+                splits
+            },
+            { withCredentials: true }
+        );
+
+        setTitle("");
+        setAmount("");
+        fetchExpenses();
+    };
+
+    if (loading) {
+        return <p className="text-center text-muted mt-5">Loading…</p>;
+    }
+
     return (
-        <div className="container py-5">
-            <nav aria-label="breadcrumb">
-                <ol className="breadcrumb">
+        <div className="container py-4" style={{ maxWidth: "720px" }}>
+            <nav aria-label="breadcrumb" className="mb-3">
+                <ol className="breadcrumb small">
                     <li className="breadcrumb-item">
                         <Link to="/dashboard">Groups</Link>
                     </li>
-                    <li className="breadcrumb-item active">Expense Details</li>
+                    <li className="breadcrumb-item active">Expenses</li>
                 </ol>
             </nav>
 
-            <div className="bg-white p-5 rounded-4 shadow-sm text-center border">
-                <div className="mb-4">
-                    <i className="bi bi-wallet2 display-1 text-primary opacity-25"></i>
+            {/* GROUP CARD */}
+            <div className="card shadow-sm mb-3">
+                <div className="card-body py-3">
+                    <h6 className="fw-semibold mb-2">{group.name}</h6>
+                    <div className="d-flex flex-wrap gap-1">
+                        {group.membersEmail.map((email, i) => (
+                            <span key={i} className="badge bg-light text-dark">
+                                {email}
+                            </span>
+                        ))}
+                    </div>
                 </div>
-                <h2 className="fw-bold">Group Expense Manager</h2>
-                <p className="text-muted">
-                    Working with Group ID:{" "}
-                    <code className="bg-light px-2 rounded">{groupId}</code>
-                </p>
+            </div>
 
-                <hr className="my-5" />
+            {/* TRANSACTIONS CARD */}
+            <div className="card shadow-sm mb-3">
+                <div className="card-body py-3">
+                    <h6 className="fw-semibold mb-3">Transactions</h6>
 
-                <div className="alert alert-info d-inline-block px-5">
-                    <h5>🛠️ Student Assignment</h5>
-                    <p className="mb-0">Implement the following here:</p>
-                    <ul className="text-start mt-3">
-                        <li>
-                            Fetch and display group details (Name, Members).
-                        </li>
-                        <li>
-                            Show a list of past transactions for this group.
-                        </li>
-                        <li>
-                            Add a form to create a new expense with title,
-                            amount, and split logic.
-                        </li>
-                    </ul>
+                    {expenses.length === 0 ? (
+                        <p className="text-muted small mb-0">
+                            No expenses added yet.
+                        </p>
+                    ) : (
+                        expenses.map(exp => (
+                            <div
+                                key={exp._id}
+                                className="d-flex justify-content-between align-items-center border-bottom py-2"
+                            >
+                                <div>
+                                    <div className="fw-medium">{exp.title}</div>
+                                    <small className="text-muted">
+                                        Paid by {exp.paidByEmail}
+                                    </small>
+                                </div>
+                                <div className="fw-semibold">
+                                    ₹{exp.amount}
+                                </div>
+                            </div>
+                        ))
+                    )}
+                </div>
+            </div>
+
+            {/* ADD EXPENSE CARD */}
+            <div className="card shadow-sm">
+                <div className="card-body py-3">
+                    <h6 className="fw-semibold mb-3">Add Expense</h6>
+
+                    <form onSubmit={handleAddExpense} className="row g-2">
+                        <div className="col-7">
+                            <input type="text" className="form-control form-control-sm" placeholder="Title" value={title} onChange={(e) => setTitle(e.target.value)} required />
+                        </div>
+
+                        <div className="col-3">
+                            <input
+                                type="number"
+                                className="form-control form-control-sm"
+                                placeholder="Amount"
+                                value={amount}
+                                onChange={(e) => setAmount(e.target.value)}
+                                required
+                            />
+                        </div>
+
+                        <div className="col-2 d-grid">
+                            <button className="btn btn-success btn-sm">
+                                Add
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
