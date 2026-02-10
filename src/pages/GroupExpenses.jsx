@@ -148,6 +148,21 @@ function GroupExpenses() {
                     </form>
                 </div>
             </div>
+            
+            {/* SETTLEMENT CARD */}
+            <div className="card shadow-sm mt-3">
+                <div className="card-body py-3">
+                    <div className="d-flex justify-content-between align-items-center mb-2">
+                        <h6 className="fw-semibold mb-0">Settlement</h6>
+                        <button
+                            className="btn btn-outline-primary btn-sm"
+                            onClick={handleSettle}
+                        >
+                            Settle
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }
