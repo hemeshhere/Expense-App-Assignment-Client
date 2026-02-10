@@ -20,44 +20,64 @@ function GroupExpenses() {
     }, []);
 
     const fetchGroupDetails = async () => {
-        const res = await axios.get(
-            `${serverEndpoint}/groups/my-groups` ,
-            { withCredentials: true }
-        );
-        setGroup(res.data.find(g=>g._id === groupId));
-        setLoading(false);
-    };
+        try{
+            const res = await axios.get(
+                `${serverEndpoint}/groups/my-groups` ,
+                { withCredentials: true }
+            );
+            setGroup(res.data.find(g=>g._id === groupId));
+            setLoading(false);
 
+        } catch(error){
+            console.log(error);
+        }
+    };
+    
     const fetchExpenses = async () => {
-        const res = await axios.get(
-            `${serverEndpoint}/expenses/${groupId}`,
-            { withCredentials: true }
-        );
-        setExpenses(res.data);
+        try{
+            const res = await axios.get(
+                `${serverEndpoint}/expenses/${groupId}`,
+                { withCredentials: true }
+            );
+            setExpenses(res.data);
+
+        } catch(error){
+            console.log(error);
+        }
     };
     
     const handleSettle= async ()=>{
-        const res= await axios.get(
-            `${serverEndpoint}/expenses/settlements/${groupId}`,
-            { withCredentials: true }
-        );
-        setSettlement(res.data)
+        try{
+            const res= await axios.get(
+                `${serverEndpoint}/expenses/settlements/${groupId}`,
+                { withCredentials: true }
+            );
+            setSettlement(res.data)
+
+        } catch(error){
+            console.log(error);
+        }
     }
 
     const handleAddExpense = async (e) => {
-        e.preventDefault();
-        await axios.post(
-            `${serverEndpoint}/expenses/create/${groupId}`,
-            {
-                title,
-                amount: Number(amount)
-            },
-            { withCredentials: true }
-        );
+        try{
+            e.preventDefault();
+            await axios.post(
+                `${serverEndpoint}/expenses/create/${groupId}`,
+                {
+                    title,
+                    amount: Number(amount)
+                },
+                { withCredentials: true }
+            );
+            
+            setTitle("");
+            setAmount("");
+            fetchExpenses();
 
-        setTitle("");
-        setAmount("");
-        fetchExpenses();
+        } catch(error){
+            console.log(error);
+        }
     };
 
     if (loading) {
@@ -93,7 +113,6 @@ function GroupExpenses() {
             <div className="card shadow-sm mb-3">
                 <div className="card-body py-3">
                     <h6 className="fw-semibold mb-3">Transactions</h6>
-
                     {expenses.length === 0 ? (
                         <p className="text-muted small mb-0">
                             No expenses added yet.
@@ -105,7 +124,9 @@ function GroupExpenses() {
                                 className="d-flex justify-content-between align-items-center border-bottom py-2"
                             >
                                 <div>
-                                    <div className="fw-medium">{exp.title}</div>
+                                    <div className="fw-medium">
+                                        {exp.title}
+                                    </div>
                                     <small className="text-muted">
                                         Paid by {exp.paidByEmail}
                                     </small>
@@ -126,7 +147,13 @@ function GroupExpenses() {
 
                     <form onSubmit={handleAddExpense} className="row g-2">
                         <div className="col-7">
-                            <input type="text" className="form-control form-control-sm" placeholder="Title" value={title} onChange={(e) => setTitle(e.target.value)} required />
+                            <input type="text" 
+                                className="form-control form-control-sm" 
+                                placeholder="Title" 
+                                value={title} 
+                                onChange={(e) => setTitle(e.target.value)} 
+                                required 
+                            />
                         </div>
 
                         <div className="col-3">
@@ -161,6 +188,43 @@ function GroupExpenses() {
                             Settle
                         </button>
                     </div>
+
+                   {settlement && (
+                        <div className="card shadow-sm mt-3">
+                            <div className="card-body py-3">
+                                <h6 className="fw-semibold mb-2">Settlement</h6>
+
+                                {Object.values(settlement).every(amt => amt === 0) ? (
+                                    <p className="text-muted small mb-0">
+                                        Everyone is settled 🎉
+                                    </p>
+                                    ) : (
+                                    Object.entries(settlement).map(([email, amount]) =>
+                                        amount !== 0 && (
+                                            <div
+                                                key={email}
+                                                className="d-flex justify-content-between align-items-center py-1 small"
+                                            >
+                                                <span className="text-truncate text-muted">
+                                                    {email}
+                                                </span>
+
+                                                <span
+                                                    className={
+                                                        amount > 0
+                                                            ? "fw-medium text-success"
+                                                            : "fw-medium text-danger"
+                                                    }
+                                                >
+                                                    {amount > 0 ? "+" : "-"}₹{Math.abs(amount)}
+                                                </span>
+                                            </div>
+                                        )
+                                    )
+                                )}
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
