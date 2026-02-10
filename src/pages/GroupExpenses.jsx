@@ -9,6 +9,7 @@ function GroupExpenses() {
     const [group, setGroup] = useState(null);
     const [expenses, setExpenses] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [settlement, setSettlement]=useState(null);
 
     const [title, setTitle] = useState("");
     const [amount, setAmount] = useState("");
@@ -34,24 +35,22 @@ function GroupExpenses() {
         );
         setExpenses(res.data);
     };
+    
+    const handleSettle= async ()=>{
+        const res= await axios.get(
+            `${serverEndpoint}/expenses/settlements/${groupId}`,
+            { withCredentials: true }
+        );
+        setSettlement(res.data)
+    }
 
     const handleAddExpense = async (e) => {
         e.preventDefault();
-
-        const splitAmount = amount / group.membersEmail.length;
-
-        const splits = group.membersEmail.map(email => ({
-            email,
-            amount: splitAmount
-        }));
-
         await axios.post(
-            `${serverEndpoint}/expenses/${groupId}/create`,
+            `${serverEndpoint}/expenses/create/${groupId}`,
             {
                 title,
-                amount: Number(amount),
-                paidByEmail: group.membersEmail[0],
-                splits
+                amount: Number(amount)
             },
             { withCredentials: true }
         );
@@ -120,8 +119,8 @@ function GroupExpenses() {
                 </div>
             </div>
 
-            {/* ADD EXPENSE CARD */}
-            <div className="card shadow-sm">
+            {/* EXPENSE CARD */}
+            <div className="card shadow-sm ">
                 <div className="card-body py-3">
                     <h6 className="fw-semibold mb-3">Add Expense</h6>
 
