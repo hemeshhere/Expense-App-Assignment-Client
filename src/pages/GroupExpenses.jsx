@@ -75,17 +75,57 @@ function GroupExpenses() {
     const handleAddExpense = async (e) => {
         try{
             e.preventDefault();
+            if (!title || !amount || amount <= 0) {
+                alert("Enter valid expense details");
+                return;
+            }
+            if (selectedMembers.length === 0) {
+                alert("Select at least one member");
+                return;
+            }
+            let splits = [];
+            if (splitType === "equal") {
+                const total = Number(amount);
+                const count = selectedMembers.length;
+                const baseSplit = Math.floor((total / count) * 100) / 100;
+                let remainder = Math.round((total - baseSplit * count) * 100) / 100;
+                splits = selectedMembers.map(email => {
+                    let share = baseSplit;
+                    if (remainder > 0) {
+                        share = Math.round((share + 0.01) * 100) / 100;
+                        remainder = Math.round((remainder - 0.01) * 100) / 100;
+                    }
+                    return { email, amount: share };
+                });
+            }
+            else{
+                const totalCustom = selectedMembers.reduce(
+                    (sum, email) => sum + Number(customSplits[email] || 0), 0
+                );
+                if (Math.round(totalCustom * 100) !== Math.round(Number(amount) * 100)) {
+                    alert("Split total must equal expense amount");
+                    return;
+                }
+
+                splits = selectedMembers.map(email => ({
+                    email,
+                    amount: Number(customSplits[email] || 0)
+                }));
+            }
             await axios.post(
                 `${serverEndpoint}/expenses/create/${groupId}`,
                 {
                     title,
-                    amount: Number(amount)
+                    amount: Number(amount),
+                    splits
                 },
                 { withCredentials: true }
             );
             
             setTitle("");
             setAmount("");
+            setCustomSplits({});
+            setSelectedMembers(group.membersEmail);
             fetchExpenses();
 
         } catch(error){
@@ -133,8 +173,6 @@ function GroupExpenses() {
                     ) : (
                         expenses.map(exp => (
                             <div key={exp._id} className="border-bottom py-2">
-
-                                {/* Top Row */}
                                 <div
                                     className="d-flex justify-content-between align-items-center"
                                     style={{ cursor: "pointer" }}
