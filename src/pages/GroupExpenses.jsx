@@ -10,6 +10,12 @@ function GroupExpenses() {
     const [expenses, setExpenses] = useState([]);
     const [loading, setLoading] = useState(true);
     const [settlement, setSettlement]=useState(null);
+    const [splitType, setSplitType] = useState("equal"); 
+    const [selectedMembers, setSelectedMembers] = useState([]);
+    const [customSplits, setCustomSplits] = useState({});
+    const [expandedExpense, setExpandedExpense] = useState(null);
+
+
 
     const [title, setTitle] = useState("");
     const [amount, setAmount] = useState("");
@@ -18,6 +24,13 @@ function GroupExpenses() {
         fetchGroupDetails();
         fetchExpenses();
     }, []);
+
+    useEffect(() => {
+        if (group) {
+            setSelectedMembers(group.membersEmail);
+        }
+    }, [group]);
+
 
     const fetchGroupDetails = async () => {
         try{
@@ -119,21 +132,59 @@ function GroupExpenses() {
                         </p>
                     ) : (
                         expenses.map(exp => (
-                            <div
-                                key={exp._id}
-                                className="d-flex justify-content-between align-items-center border-bottom py-2"
-                            >
-                                <div>
-                                    <div className="fw-medium">
-                                        {exp.title}
+                            <div key={exp._id} className="border-bottom py-2">
+
+                                {/* Top Row */}
+                                <div
+                                    className="d-flex justify-content-between align-items-center"
+                                    style={{ cursor: "pointer" }}
+                                    onClick={() =>
+                                        setExpandedExpense(
+                                            expandedExpense === exp._id ? null : exp._id
+                                        )
+                                    }
+                                >
+                                    <div>
+                                        <div className="fw-medium">{exp.title}</div>
+                                        <small className="text-muted">
+                                            Paid by {exp.paidByEmail}
+                                        </small>
                                     </div>
-                                    <small className="text-muted">
-                                        Paid by {exp.paidByEmail}
-                                    </small>
+                                    <div className="fw-semibold">
+                                        ₹{exp.amount}
+                                    </div>
                                 </div>
-                                <div className="fw-semibold">
-                                    ₹{exp.amount}
-                                </div>
+
+                                {/* Split Breakdown */}
+                                {expandedExpense === exp._id && (
+                                    <div className="mt-3 ps-3 small bg-light rounded p-2">
+                                        <div className="fw-semibold mb-2 text-muted">
+                                            Split Breakdown
+                                        </div>
+                                        {exp.splits.map(split => (
+                                            <div
+                                                key={split._id}
+                                                className="d-flex justify-content-between align-items-center py-1"
+                                            >
+                                                <span
+                                                    className={
+                                                        split.email === exp.paidByEmail
+                                                            ? "fw-medium text-primary"
+                                                            : "text-muted"
+                                                    }
+                                                >
+                                                    {split.email}
+                                                    {split.email === exp.paidByEmail && " (Paid)"}
+                                                </span>
+
+                                                <span className="fw-medium">
+                                                    ₹{split.amount}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
                             </div>
                         ))
                     )}
@@ -144,6 +195,61 @@ function GroupExpenses() {
             <div className="card shadow-sm ">
                 <div className="card-body py-3">
                     <h6 className="fw-semibold mb-3">Add Expense</h6>
+
+                    <div className="mb-3">
+                        <label className="form-label small fw-semibold">Select Members</label>
+                        {group.membersEmail.map(email => (
+                            <div key={email} className="form-check">
+                                <input
+                                    type="checkbox"
+                                    className="form-check-input"
+                                    checked={selectedMembers.includes(email)}
+                                    onChange={(e) => {
+                                        if (e.target.checked) {
+                                            setSelectedMembers([...selectedMembers, email]);
+                                        } else {
+                                            setSelectedMembers(
+                                                selectedMembers.filter(m => m !== email)
+                                            );
+                                        }
+                                    }}
+                                />
+                                <label className="form-check-label small">
+                                    {email}
+                                </label>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="mb-3">
+                        <select
+                            className="form-select form-select-sm"
+                            value={splitType}
+                            onChange={(e) => setSplitType(e.target.value)}
+                        >
+                            <option value="equal">Equal Split</option>
+                            <option value="unequal">Unequal Split</option>
+                        </select>
+                    </div>
+
+                    {splitType === "unequal" && selectedMembers.map(email => (
+                        <div key={email} className="mb-2">
+                            <label className="small">{email}</label>
+                            <input
+                                type="number"
+                                className="form-control form-control-sm"
+                                value={customSplits[email] || ""}
+                                onChange={(e) =>
+                                    setCustomSplits({
+                                        ...customSplits,
+                                        [email]: Number(e.target.value)
+                                    })
+                                }
+                            />
+                        </div>
+                    ))}
+
+
+
 
                     <form onSubmit={handleAddExpense} className="row g-2">
                         <div className="col-7">
