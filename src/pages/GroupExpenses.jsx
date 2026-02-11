@@ -139,7 +139,7 @@ function GroupExpenses() {
 
     return (
         <div className="container py-4" style={{ maxWidth: "720px" }}>
-            <nav aria-label="breadcrumb" className="mb-3">
+            <nav aria-label="breadcrumb" className="mb-2">
                 <ol className="breadcrumb small">
                     <li className="breadcrumb-item">
                         <Link to="/dashboard">Groups</Link>
@@ -185,7 +185,7 @@ function GroupExpenses() {
                                     <div>
                                         <div className="fw-medium">{exp.title}</div>
                                         <small className="text-muted">
-                                            Paid by {exp.paidByEmail}
+                                            Added by {exp.paidByEmail}
                                         </small>
                                     </div>
                                     <div className="fw-semibold">
@@ -204,15 +204,8 @@ function GroupExpenses() {
                                                 key={split._id}
                                                 className="d-flex justify-content-between align-items-center py-1"
                                             >
-                                                <span
-                                                    className={
-                                                        split.email === exp.paidByEmail
-                                                            ? "fw-medium text-primary"
-                                                            : "text-muted"
-                                                    }
-                                                >
+                                                <span className="fw-medium text-primary">
                                                     {split.email}
-                                                    {split.email === exp.paidByEmail && " (Paid)"}
                                                 </span>
 
                                                 <span className="fw-medium">
@@ -230,10 +223,9 @@ function GroupExpenses() {
             </div>
 
             {/* EXPENSE CARD */}
-            <div className="card shadow-sm ">
+            <div className="card shadow-sm mb-3">
                 <div className="card-body py-3">
                     <h6 className="fw-semibold mb-3">Add Expense</h6>
-
                     <div className="mb-3">
                         <label className="form-label small fw-semibold">Select Members</label>
                         {group.membersEmail.map(email => (
@@ -286,9 +278,6 @@ function GroupExpenses() {
                         </div>
                     ))}
 
-
-
-
                     <form onSubmit={handleAddExpense} className="row g-2">
                         <div className="col-7">
                             <input type="text" 
@@ -321,53 +310,50 @@ function GroupExpenses() {
             </div>
             
             {/* SETTLEMENT CARD */}
-            <div className="card shadow-sm mt-3">
+            <div className="card shadow-sm mb-3">
                 <div className="card-body py-3">
-                    <div className="d-flex justify-content-between align-items-center mb-2">
-                        <h6 className="fw-semibold mb-0">Settlement</h6>
-                        <button
-                            className="btn btn-outline-primary btn-sm"
-                            onClick={handleSettle}
-                        >
-                            Settle
+                    <div className="d-flex justify-content-between align-items-center mb-1">
+                        <h6 className="fw-semibold mb-0">Settlement Summary</h6>
+                        <button className="btn btn-primary btn-sm" onClick={handleSettle}>
+                            Calculate Settlement
                         </button>
                     </div>
 
                    {settlement && (
-                        <div className="card shadow-sm mt-3">
-                            <div className="card-body py-3">
-                                <h6 className="fw-semibold mb-2">Settlement</h6>
-
-                                {Object.values(settlement).every(amt => amt === 0) ? (
-                                    <p className="text-muted small mb-0">
-                                        Everyone is settled 🎉
+                        <>
+                            {Object.values(settlement).every(amt => amt === 0) ? (
+                                <div className="text-center py-3">
+                                    <p className="text-success fw-medium mb-0">
+                                        Everyone is settled! 
                                     </p>
-                                    ) : (
-                                    Object.entries(settlement).map(([email, amount]) =>
-                                        amount !== 0 && (
-                                            <div
-                                                key={email}
-                                                className="d-flex justify-content-between align-items-center py-1 small"
-                                            >
-                                                <span className="text-truncate text-muted">
-                                                    {email}
-                                                </span>
-
-                                                <span
-                                                    className={
-                                                        amount > 0
-                                                            ? "fw-medium text-success"
-                                                            : "fw-medium text-danger"
-                                                    }
-                                                >
-                                                    {amount > 0 ? "+" : "-"}₹{Math.abs(amount)}
-                                                </span>
-                                            </div>
-                                        )
+                                </div>
+                                ) : ( 
+                                <div className="list-group list-group-flush">
+                                    {Object.entries(settlement).map(([email, amount]) => amount !== 0 && (
+                                        <div key={email}
+                                            className="list-group-item d-flex justify-content-between align-items-center px-0 py-2"
+                                        >
+                                        <div>
+                                            <div className="fw-medium">{email}</div>
+                                            <small className={ amount > 0 ? 
+                                                "badge bg-success-subtle text-success" : "badge bg-danger-subtle text-danger"
+                                            }>
+                                                {amount > 0 ? "Will receive" : "Needs to pay"}
+                                            </small>
+                                        </div>
+                                        <span
+                                            className={ amount > 0 ? 
+                                                "badge bg-success-subtle text-success fs-6" : "badge bg-danger-subtle text-danger fs-6"
+                                            }
+                                        >
+                                            ₹{Math.abs(amount)}
+                                        </span>
+                                        </div>
                                     )
-                                )}
-                            </div>
-                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </>
                     )}
                 </div>
             </div>
